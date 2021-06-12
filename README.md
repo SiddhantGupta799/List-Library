@@ -1,7 +1,7 @@
 # List-Library
 A Thorough Implementation of the 4 types of Linked Lists with C++ and OOP
 
-This Library has an Inheritance based model of implementing Linked Lists
+This Library has an Inheritance based model of implementing Linked Lists.
 The model looks like this
 
 		Grand Parent:		abstract class List
@@ -33,21 +33,26 @@ class List provides all the methods that a Linked List has to offer, of which in
 		- display to console
 		- debugging info by log_properties function
 		
-Points to be Noted:
+More Description of the Model:
 
 	- The derived classes __SLLBase__ and __DLLBase__ implements the function inherited from there parent List
+	
 	- __SLLBase__ and __DLLBase__ provide constructors to their derived classes, however copy and move construtors 
 	  are to be implemented by the derived classes themselves.
+	  
 	- The List class provides two types of heads and two types of tails as public variables to their derived classes
-		_head_ and _tail_		:	the head and tail for __SLLBase__ and its derivatives, respectively
+		_head_ and _tail_	:	the head and tail for __SLLBase__ and its derivatives, respectively
 		__head__ and __tail__	:	the head and tail for __DLLBase__ and its derivatives, respectively
+		
 	- The Destructors for all the derivatives is located in the List class itself, to prevent memory leaks,
 	  during runtime polymorphism.
+	  
 	- The 'C' or 'Circular' versions of the two types isn't implemented to be circular in its usual state,
 	  circularity may not be a problem to destruct those objects but it can cause hindrance to the working 
 	  of other functions, rendering them a rigourous modification which defeats the purpose of the 'C' 
 	  versions implmented by inheritance. however, two functions i.e. circularise() and straighten() are provided
 	  in their definitions and as their names suggests they should be used accordingly.
+	  
 	- while using the runtime polymorphism the objects of derived class really get constrained to the functions that 
 	  parent class has offered which doesn't leave room for the actual benefits that the derived class offers
 	  for example: concatenation, merging. 
