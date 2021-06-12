@@ -4,35 +4,38 @@ A Thorough Implementation of the 4 types of Linked Lists with C++ and OOP
 This Library has an Inheritance based model of implementing Linked Lists
 The model looks like this
 
-Grand Parent:	abstract class List
-Derived:		abstract class __SLLBase__ and abstract class __DLLBase__
+		Grand Parent:		abstract class List
+		Derived:		abstract class __SLLBase__ and abstract class __DLLBase__
 
-Parent:			abstract class __SLLBase__
-Children:		class SLList and class CSLList (both not abstract)
-				- SLList: Singly Linked List
-				- CSLList: Circular Singly Linked List
+		Parent:			abstract class __SLLBase__
+		Children:		class SLList and class CSLList (both not abstract)
+						- SLList: Singly Linked List
+						- CSLList: Circular Singly Linked List
 
-Parent:			abstract class __DLLBase__
-Children:		class DLList and class CDLList (both not abstract)
-				- DLList: Doubly Linked List
-				- CDLList: Circular Doubly Linked List
+		Parent:			abstract class __DLLBase__
+		Children:		class DLList and class CDLList (both not abstract)
+						- DLList: Doubly Linked List
+						- CDLList: Circular Doubly Linked List
 
 class List provides all the methods that a Linked List has to offer, of which includes:
-	- insertion
-	- deletion
-	- sorting
-	- sorted insertion
-	- pop back
-	- pop front
-	- push back
-	- push front
-	- linear search
-	- intelligent linear search (putting the most searched node at head)
-	- min and max element
-	- display to console
-	- debugging info by log_properties function
 
-The derived classes __SLLBase__ and __DLLBase__ implements the function inherited from there parent List
+		- insertion
+		- deletion
+		- sorting
+		- sorted insertion
+		- pop back
+		- pop front
+		- push back
+		- push front
+		- linear search
+		- intelligent linear search (putting the most searched node at head)
+		- min and max element
+		- display to console
+		- debugging info by log_properties function
+		
+Points to be Noted:
+
+	- The derived classes __SLLBase__ and __DLLBase__ implements the function inherited from there parent List
 	- __SLLBase__ and __DLLBase__ provide constructors to their derived classes, however copy and move construtors 
 	  are to be implemented by the derived classes themselves.
 	- The List class provides two types of heads and two types of tails as public variables to their derived classes
