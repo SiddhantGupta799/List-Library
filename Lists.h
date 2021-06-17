@@ -2,7 +2,70 @@
 #include <iostream>
 using namespace std;
 
-// Single Node
+/*
+# List-Library
+A Thorough Implementation of the 4 types of Linked Lists with C++ and OOP
+
+This Library has an Inheritance based model of implementing Linked Lists.
+The model looks like this
+
+		Grand Parent:	abstract class List
+		Derived:		abstract class __SLLBase__ and abstract class __DLLBase__
+
+		Parent:			abstract class __SLLBase__
+		Children:		class SLList and class CSLList (both not abstract)
+						- SLList: Singly Linked List
+						- CSLList: Circular Singly Linked List
+
+		Parent:			abstract class __DLLBase__
+		Children:		class DLList and class CDLList (both not abstract)
+						- DLList: Doubly Linked List
+						- CDLList: Circular Doubly Linked List
+
+class List provides all the methods that a Linked List has to offer, of which includes:
+
+		- insertion
+		- deletion
+		- sorting
+		- sorted insertion
+		- pop back
+		- pop front
+		- push back
+		- push front
+		- linear search
+		- intelligent linear search (putting the most searched node at head)
+		- min and max element
+		- display to console
+		- debugging info by log_properties function
+
+More Description of the Model:
+
+	- The derived classes __SLLBase__ and __DLLBase__ implements the function inherited from there parent List
+
+	- __SLLBase__ and __DLLBase__ provide constructors to their derived classes, however copy and move construtors
+	  are to be implemented by the derived classes themselves.
+
+	- The List class provides two types of heads and two types of tails as public variables to their derived classes
+		_head_ and _tail_	:	the head and tail for __SLLBase__ and its derivatives, respectively
+		__head__ and __tail__	:	the head and tail for __DLLBase__ and its derivatives, respectively
+
+	- The Destructors for all the derivatives is located in the List class itself, to prevent memory leaks,
+	  during runtime polymorphism.
+
+	- The 'C' or 'Circular' versions of the two types isn't implemented to be circular in its usual state,
+	  circularity may not be a problem to destruct those objects but it can cause hindrance to the working
+	  of other functions, rendering them a rigourous modification which defeats the purpose of the 'C'
+	  versions implmented by inheritance. however, two functions i.e. circularise() and straighten() are provided
+	  in their definitions and as their names suggests they should be used accordingly.
+
+	- while using the runtime polymorphism the objects of derived class really get constrained to the functions that
+	  parent class has offered which doesn't leave room for the actual benefits that the derived class offers
+	  for example: concatenation, merging.
+	  even the debug logging gets constrained to at most the details of object and debug entry.
+
+*/
+
+// Singular Node
 template<typename T>
 struct SingleNode {
 	T data;
@@ -27,11 +90,13 @@ void __swap(Ty& a, Ty& b) {
 // this is for debugging of dynamically declared List<> variables
 #define bind_name(x) x->name = #x
 
-// for class type use init_name() will be found in PyBasics.h
+// for class type use 
+#define init_name(x) x.name = #x
 
+// Abstract Base Class for all the Linked List, that will be implmented
 template<typename T>
-class List {
-public:
+class List abstract{
+protected:
 	using pointer_sll = SingleNode<T>*;
 	using value_sll = SingleNode<T>;
 
@@ -44,34 +109,47 @@ public:
 	pointer_dll __head__ = NULL;
 	pointer_dll __tail__ = NULL;
 
+public:
 	// public variable name
 	char const* name = "none";
 
 	// all the virtual functions a Linked List should override and implement when extending this class
+
+	// returns size
 	virtual int size() = 0;
 
-	// insertion removal
+	// insertion 
 	virtual List& insert(T val, int index) = 0;
+	// removal
 	virtual List& remove(int index) = 0;
 
-	// push and pop
+	// popping an element at the back
 	virtual List& pop_back() = 0;
+
+	// popping an element from front
 	virtual List& pop_front() = 0;
+
+	// pushing an element at the back
 	virtual List& push_front(T val) = 0;
+
+	// pushing an element in front
 	virtual List& push_back(T val) = 0;
 
-	// maybe possible in Double Linked List
-	// virtual bool binary_search() = 0;
+	// type restrictions and naming conventions are causing difficulty for the implemetation
+	// 	   begin()
+	// 	   end()
+	// 	   head()
+	// 	   tail()
+	// so these are bound to be contained in child classes of List
 
-	// sorting and sorted insert
+	// sorting
 	virtual List& sort() = 0;
+
+	// sorted insert
 	virtual List& sorted_insert(T elem) = 0;
 
 	// reversal
 	virtual List& reverse_by_links() = 0;
-
-	// convienient display
-	virtual void show() = 0;
 
 	// intelligent linear search
 	virtual int ilinear_search(T elem) = 0;
@@ -79,12 +157,19 @@ public:
 	// linear search
 	virtual int linear_search(T elem) = 0;
 
-	// max and min element
+	// max element
 	virtual T max() = 0;
 
+	// min element
 	virtual T min() = 0;
 
-	// debug detals info
+	// a convienient display
+	virtual void show() {}
+
+	// a deallocator
+	virtual List& clear() = 0;
+
+	// debug details in runtime
 	void log_properties(char const* entry = "", bool log_obj_details = false, bool show_log_count = true) {
 		static int _i = 0;
 
@@ -129,6 +214,8 @@ public:
 // Abstract Base Class for Single Linked List, will be extended by Singly Linked List, and Circular Single Linked list
 template<typename T>
 class __SLLBase__ abstract : public List<T> {
+	using pointer = SingleNode<T>*;
+	using value = SingleNode<T>;
 
 	friend ostream& operator<<(ostream& os, __SLLBase__<T>& sll) {
 		sll.show();
@@ -136,11 +223,30 @@ class __SLLBase__ abstract : public List<T> {
 	}
 
 public:
-	using pointer = SingleNode<T>*;
-	using value = SingleNode<T>;
-	
 	int __size__ = 0;
 
+protected:
+	void _copy_values_(pointer begin, pointer end) {
+
+		this->_head_ = new value{ NULL };
+		this->_head_->data = begin->data;
+		this->_head_->next = NULL;
+		this->_tail_ = this->_head_;
+		this->__size__ = 1;
+		begin = begin->next;
+
+		while (begin) {
+			pointer temp = new value{ NULL };
+			temp->data = begin->data;
+			temp->next = NULL;
+			this->_tail_->next = temp;
+			this->_tail_ = temp;
+			begin = begin->next;
+			this->__size__++;
+		}
+	}
+
+public:
 	__SLLBase__() = default;
 
 	__SLLBase__(initializer_list<T> init_l) {
@@ -166,20 +272,18 @@ public:
 
 	// copy and move constructor are not needed to be made here
 
-	//for Manual Traversing
+	// for Manual Traversing
+	SingleNode<T>* begin() {return this->_head_;}
+	SingleNode<T>* head() { return this->_head_; }
+	SingleNode<T>* end() {return this->_tail_->next;}
+	SingleNode<T>* tail() { return this->_tail_; }
 
-	SingleNode<T>* begin() {
-		return this->_head_;
-	}
-
-	SingleNode<T>* end() {
-		return this->_tail_->next;
-	}
-
+protected:
 	// the functions that directly nulls out things without deleting
 	// useful w.r.t move semantics
 	void null_out() { this->_head_ = NULL; this->_tail_ = NULL; this->__size__ = 0; }
 
+public:
 	// appends in the beginning
 	__SLLBase__& push_front(T val) {
 		pointer temp = new value{ NULL };
@@ -303,8 +407,16 @@ public:
 			p = p->next;
 			q->next = r;
 		}
-
 		this->_head_ = q;
+
+		// since tail is now screwed we need to retraverse to intialize tail
+		p = this->_head_;
+		while (p) {
+			this->_tail_ = p; 
+			p = p->next;
+		}
+
+		p = q = r = NULL;
 
 		return *this;
 	}
@@ -333,7 +445,7 @@ public:
 		return _min;
 	}
 
-	void show() {
+	void show() override  {
 		pointer temp = this->_head_;
 		while (temp) {
 			cout << temp->data << " ";
@@ -424,6 +536,18 @@ public:
 		return *this;
 	}
 
+	__SLLBase__& clear() {
+		// deallocating memory
+		while (this->_head_) {
+			pointer temp = this->_head_;
+			this->_head_ = this->_head_->next;
+			delete temp;
+		}
+		this->__size__ = 0;
+
+		return *this;
+	}
+
 	~__SLLBase__() {
 		// before this the List destructor will be called and this makes the SLL data cleared
 		// iam gonna ensure that
@@ -431,15 +555,16 @@ public:
 	}
 };
 
+// Abstract Base Class for Double Linked List, will be extended by Double Linked List, and Circular Double Linked list
 template<typename T>
 class __DLLBase__ abstract : public List<T> {
 	using pointer = BinaryNode<T>*;
 	using value = BinaryNode<T>;
 
+public:
 	// size has to be kept private if it gets modified by outside interference member functions will not work right
 	int __size__ = 0;
 
-public:
 	__DLLBase__() = default;
 
 	__DLLBase__(initializer_list<T> init_l) {
@@ -467,15 +592,47 @@ public:
 		}
 	}
 
-	// copy construc and move construct, and operator= have to be implemented but in the derived class :)
+	// copy construct and move construct, and operator= have to be implemented but in the derived class :)
 
+	// for manual traversal
 	BinaryNode<T>* begin() { return this->__head__; }
-
-	BinaryNode<T>* end() { return this->__tail__; }
+	BinaryNode<T>* head() { return this->__head__; }
+	BinaryNode<T>* end() { return this->__tail__->next; }
+	BinaryNode<T>* tail() { return this->__tail__; }
 
 	int size() { return this->__size__; }
 
-	// push and pop
+protected:
+	// useful for move semantics
+	void null_out() { this->__head__ = NULL; this->__tail__ = NULL; this->__size__ = 0; }
+
+	void __copy_values__(pointer begin, pointer end) {
+		this->__head__ = new value{ NULL };
+		this->__head__->data = begin->data;
+		this->__head__->next = NULL;
+		this->__head__->prev = NULL;
+		this->__tail__ = this->__head__;
+		begin = begin->next;
+		this->__size__ = 1;
+
+		while (begin) {
+			pointer temp = new value{ NULL };
+			temp->data = begin->data;
+			temp->prev = NULL;
+			temp->next = NULL;
+
+			this->__tail__->next = temp;
+			temp->prev = this->__tail__;
+			this->__tail__ = temp;
+			temp = NULL;
+			begin = begin->next;
+			this->__size__++;
+		}
+	}
+
+public:
+/*	Push and Pop at Front and Back	*/
+
 	__DLLBase__& pop_back() {
 		if (this->__size__ == 0) {}
 		else {
@@ -556,7 +713,8 @@ public:
 		return *this;
 	}
 
-	// insertion removal
+/*	Insertion and Removal	*/
+
 	__DLLBase__& insert(T val, int index) {
 		if (index == 0) { this->push_front(val); }
 		else if (index == this->__size__) { this->push_back(val); }
@@ -610,6 +768,7 @@ public:
 		return *this;
 	}
 
+/*	Searches	*/
 	// bound to be implemented here accordingly
 	int ilinear_search(T elem) {
 		int index = 0;
@@ -661,11 +820,12 @@ public:
 	// maybe possible in Double Linked List
 	bool binary_search() {
 		// try implementing binary search
-
+		// only a luxury to implement it without the use of size and linear traversal
 		return false;
 	}
 
-	// sorting and sorted insert
+/*	Sorting and Sorted Insertion	*/
+
 	__DLLBase__& sort() {
 		// implement insertion sort here
 
@@ -722,12 +882,60 @@ public:
 	}
 
 	__DLLBase__& sorted_insert(T elem) {
+		// assuming the list is already sorted
+
+		pointer temp = this->__head__;
+
+		// finding the position of insertion
+		while (temp->data < elem) { temp = temp->next; }
+
+		pointer _left = temp->prev;
+
+		// initializing a new node
+		pointer _new_node = new value{ NULL };
+		_new_node->data = elem;
+		_new_node->prev = NULL;
+		_new_node->next = NULL;
+
+		// connecting the left to new node
+		_new_node->prev = _left;
+		_left->next = _new_node;
+
+		// connecting new node to temp
+		_new_node->next = temp;
+		temp->prev = _new_node;
+
+		// nulling the pointers out
+		_new_node = NULL;
+		temp = NULL;
+		_left = NULL;
 
 		return *this;
 	}
 
-	// reversal
+/*	Reversal	*/
 	__DLLBase__& reverse_by_links() {
+		// using sliding pointers
+		pointer p = this->__head__;
+
+		while (p) {
+			pointer temp = p->next;
+			p->next = p->prev;
+			p->prev = temp;
+
+			p = p->prev;
+
+			if (p!= NULL and p->next == NULL) this->__head__ = p;
+		}
+
+		// since the tail is screwed
+		p = this->__head__;
+		while (p) {
+			this->__tail__ = p;
+			p = p->next;
+		}
+
+		p = NULL;
 
 		return *this;
 	}
@@ -744,7 +952,7 @@ public:
 
 	// all of the functions below this can be inherited from List<> even the destructor
 	// convienient display
-	void show() {
+	void show() override  {
 		pointer dl_ptr = this->__head__;
 		while (dl_ptr) {
 			cout << dl_ptr->data << " ";
@@ -791,6 +999,17 @@ public:
 		return min;
 	}
 
+	__DLLBase__& clear() {
+		// clearing the previously allocated memory
+		while (this->__head__) {
+			pointer temp = this->__head__;
+			this->__head__ = this->__head__->next;
+			delete temp;
+		}
+		this->__size__ = 0;
+		return *this;
+	}
+
 	// debug detals info
 	void log_properties(char const* entry = "", bool log_obj_details = false, bool show_log_count = true) {
 		List<T>::log_properties(entry, log_obj_details, show_log_count);
@@ -799,21 +1018,9 @@ public:
 		cout << endl;
 	}
 
-	~__DLLBase__() {}
-};
-
-template<typename T>
-class DLList : public __DLLBase__<T> {
-	using pointer = BinaryNode<T>*;
-	using value = BinaryNode<T>;
-
-public:
-	DLList() : __DLLBase__<T>() {}
-	DLList(initializer_list<T> init_l) : __DLLBase__<T>(init_l) {}
-
-	// copy, move constructs, and assignments to be implmented here
-
-	~DLList() {}
+	~__DLLBase__() {
+		this->__size__ = 0;
+	}
 };
 
 // Singly Linked List
@@ -839,22 +1046,7 @@ public:
 	// copy construct
 	SLList(const SLList& obj){
 		if (obj.__size__ > 0) {
-			this->_head_ = new value{ NULL };
-			this->_head_->data = obj._head_->data;
-			this->_head_->next = NULL;
-			this->_tail_ = this->_head_;
-			this->__size__++;
-
-			pointer obj_pt = obj._head_->next;
-			while (obj_pt) {
-				pointer temp = new value{ NULL };
-				temp->data = obj_pt->data;
-				temp->next = NULL;
-				this->_tail_->next = temp;
-				this->_tail_ = temp;
-				obj_pt = obj_pt->next;
-				this->__size__++;
-			}
+			this->_copy_values_(obj._head_, obj._tail_);
 		}
 		else {
 			this->_head_ = NULL;
@@ -874,31 +1066,12 @@ public:
 	// for lhs values
 	SLList& operator= (const SLList& obj) { 
 		// clearing old memory
-		while (this->_head_) {
-			pointer temp = this->_head_;
-			this->_head_ = this->_head_->next;
-			delete temp;
-		}
+		this->clear();
 
 		this->__size__ = 0;
 
 		if (obj.__size__ > 0) {
-			this->_head_ = new value{ NULL };
-			this->_head_->data = obj._head_->data;
-			this->_head_->next = NULL;
-			this->_tail_ = this->_head_;
-			this->__size__++;
-
-			pointer obj_pt = obj._head_->next;
-			while (obj_pt) {
-				pointer temp = new value{ NULL };
-				temp->data = obj_pt->data;
-				temp->next = NULL;
-				this->_tail_->next = temp;
-				this->_tail_ = temp;
-				obj_pt = obj_pt->next;
-				this->__size__++;
-			}
+			this->_copy_values_(obj._head_,obj._tail_);
 		}
 		else {
 			this->_head_ = NULL;
@@ -910,30 +1083,38 @@ public:
 	}
 
 	// for rhs values
-	SLList& operator=(SLList&& obj) noexcept {
+	SLList& operator= (SLList&& obj) noexcept {
+		// clearing old memory
+		this->clear();
+
+		this->null_out();
+
 		this->_head_ = obj._head_;
 		this->_tail_ = obj._tail_;
 		this->__size__ = obj.__size__;
+
 		obj.null_out();
 		return *this;
 	}
 
 	// utility functions
 	SLList& concat(SLList<T> sll) {
-		//cout << "_tail_->data: " << _tail_->data << endl;
-		//cout << "_tail_->next: " << _tail_->next << endl;
-		//cout << "obj->_head_->data: " << sll._head_->data << endl;
-		pointer temp = sll._head_;
-		this->_tail_->next = temp;
-		this->_head_;
-		this->_tail_ = sll._tail_;
-		this->__size__ += sll.__size__;
+		if (this->__size__ > 0) {
+			//cout << "_tail_->data: " << _tail_->data << endl;
+			//cout << "_tail_->next: " << _tail_->next << endl;
+			//cout << "obj->_head_->data: " << sll._head_->data << endl;
+			pointer temp = sll._head_;
+			this->_tail_->next = temp;
 
-		// since we already have a copy of the linked list we can assign it to ours
-		// and null out the copy so it doesn't delete the memory referenced by its 
-		// pointers _head_, _tail_ on the heap while getting destroyed
-		sll.null_out();
+			this->_tail_ = sll._tail_;
+			this->__size__ += sll.__size__;
 
+			// since we already have a copy of the linked list we can assign it to ours
+			// and null out the copy so it doesn't delete the memory referenced by its 
+			// pointers _head_, _tail_ on the heap while getting destroyed
+			sll.null_out();
+		}
+		else {this->operator=(sll);}
 		return *this;
 	}
 
@@ -1067,7 +1248,6 @@ public:
 	~SLList() {}
 };
 
-// Circular Singly Linked List
 /*
 In original state the CSLL wil be SLL, it will become circular once circularize() is called
 but as a counter to circularize, straighten function is also provided, also circularise and straighten
@@ -1084,6 +1264,7 @@ for example
 	}while (temp != csl.end());
 	csl.straighten();						// straightening the data as it will cause failures during destruction of object
 */
+// Circular Singly Linked List
 template<typename T>
 class CSLList : public __SLLBase__<T> {
 	using pointer = SingleNode<T>*;
@@ -1098,7 +1279,16 @@ public:
 	CSLList(initializer_list<T> init_l) : __SLLBase__<T>(init_l) {}
 
 	// copy construct
-	CSLList(const CSLList& obj) : __SLLBase__<T>(obj) {}
+	CSLList(const CSLList& obj){
+		if (obj.__size__ > 0) {
+			this->_copy_values_(obj._head_,obj._tail_);
+		}
+		else {
+			this->_head_ = NULL;
+			this->_tail_ = NULL;
+			this->__size__ = 0;
+		}
+	}
 
 	// move construct
 	CSLList(CSLList&& obj) {
@@ -1110,27 +1300,12 @@ public:
 
 	// for lhs values
 	CSLList& operator= (const CSLList& obj) {
-		this->~CSLList();
+		// clearing old memory
+		this->clear();
 
 		if (obj.__size__ > 0) {
-			this->_head_ = new value{ NULL };
-			this->_head_->data = obj._head_->data;
-			this->_head_->next = NULL;
-			this->_tail_ = this->_head_;
-			this->__size__++;
-
-			pointer obj_pt = obj._head_->next;
-			while (obj_pt) {
-				pointer temp = new value{ NULL };
-				temp->data = obj_pt->data;
-				temp->next = NULL;
-				this->_tail_->next = temp;
-				this->_tail_ = temp;
-				obj_pt = obj_pt->next;
-				this->__size__++;
-			}
+			this->_copy_values_(obj._head_, obj._tail_);
 		}
-
 		else {
 			this->_head_ = NULL;
 			this->_tail_ = NULL;
@@ -1162,3 +1337,267 @@ public:
 	~CSLList() {}
 };
 
+// Doubly Linked List
+template<typename T>
+class DLList : public __DLLBase__<T> {
+	using pointer = BinaryNode<T>*;
+	using value = BinaryNode<T>;
+
+public:
+	DLList() : __DLLBase__<T>() {}
+	DLList(initializer_list<T> init_l) : __DLLBase__<T>(init_l) {}
+
+	// copy, move constructors and assignments
+	DLList(const DLList& obj) {
+		if (obj.__size__ > 0) {
+			this->__copy_values__(obj.__head__,obj.__tail__);
+		}
+		else {
+			this->__head__ = NULL;
+			this->__tail__ = NULL;
+			this->__size__ = 0;
+		}
+	}
+
+	DLList(DLList&& obj)noexcept {
+		this->__head__ = obj.__head__;
+		this->__tail__ = obj.__tail__;
+		this->__size___ = obj.__size__;
+		obj.null_out();
+	}
+
+	DLList& operator=(const DLList& obj) {
+		// clearing the previously allocated memory
+		this->clear();
+
+		if (obj.__size__ > 0) {
+			this->__copy_values__(obj.__head__, obj.__tail__);
+		}
+		else {
+			this->__head__ = NULL;
+			this->__tail__ = NULL;
+			this->__size__ = 0;
+		}
+
+		return*this;
+	}
+
+	DLList& operator= (DLList&& obj) noexcept {
+		// clearing the previously allocated memory
+		while (this->__head__) {
+			pointer temp = this->__head__;
+			this->__head__ = this->__head__->next;
+			delete temp;
+		}
+
+		this->null_out();
+
+		this->__head__ = obj.__head__;
+		this->__tail__ = obj.__tail__;
+		this->__size__ = obj.__size__;
+		obj.null_out();
+
+		return* this;
+	}
+
+	// for concatenation
+	DLList& concat(DLList<T> obj) {
+		if (this->__size__ > 0) {
+			// joining the two lists
+			this->__tail__->next = obj.__head__;
+			obj.__head__->prev = this->__tail__;
+
+			this->__tail__ = obj.__tail__;
+
+			this->__size__ += obj.__size__;
+
+			obj.null_out();
+		}
+		else { this->operator=(obj); }
+		return *this;
+	}
+
+	~DLList() {}
+};
+
+/*
+In original state the CDLL wil be DLL, it will become circular once circularize() is called
+but as a counter to circularize, straighten function is also provided, also circularize and straighten
+should be used in pairs.
+for example
+	to print the content using an external pointer to the list it can be done this way
+
+	CDLList<int> cdl {3,4,5,2,4};			// creating an object
+	cdl.circularize();						// circularising the list
+	BinaryNode<T>* temp = cdl.begin();		// initializing an external pointer by begin()
+	do {									// since in CSLList the head is the only pointer, end() also returns head so we use do while loop
+		cout << temp->data << " ";			// using the loop to traverse all data
+		temp = temp->next;
+	}while (temp != cdl.end());
+	cdl.straighten();						// straightening the data as it will cause failures during destruction of object
+*/
+// Circular Doubly Linked List
+template<typename T>
+class CDLList :public __DLLBase__<T> {
+	using pointer = BinaryNode<T>*;
+	using value = BinaryNode<T>;
+
+public:
+	void circularize() { 
+		this->__tail__->next = this->__head__;
+		this->__head__->prev = this->__tail__;
+	}
+
+	void straighten() {
+		this->__tail__->next = NULL;
+		this->__head__->prev = NULL;
+	}
+
+	// a circular linked list cannot be empty
+	CDLList() = delete;
+
+	CDLList(initializer_list<T> init_l) : __DLLBase__<T>(init_l) {}
+
+	CDLList(const CDLList& obj) {
+		if (obj.__size__ > 0) {
+			this->__copy_values__(obj.__head__, obj.__tail__);
+		}
+		else {
+			this->__head__ = NULL;
+			this->__tail__ = NULL;
+			this->__size__ = 0;
+		}
+	}
+
+	CDLList(CDLList&& obj) noexcept {
+		this->__head__ = obj.__head__;
+		this->__tail__ = obj.__tail__;
+		this->__size___ = obj.__size__;
+		obj.null_out();
+	}
+
+	CDLList& operator=(const CDLList& obj) {
+		// clearing the previously allocated memory
+		this->clear();
+
+		if (obj.__size__ > 0) {
+			this->__copy_values__(obj.__head__, obj.__tail__);
+		}
+		else {
+			this->__head__ = NULL;
+			this->__tail__ = NULL;
+			this->__size__ = 0;
+		}
+
+		return*this;
+	}
+
+	CDLList& operator= (CDLList&& obj) noexcept {
+		// clearing the previously allocated memory
+		while (this->__head__) {
+			pointer temp = this->__head__;
+			this->__head__ = this->__head__->next;
+			delete temp;
+		}
+
+		this->null_out();
+
+		this->__head__ = obj.__head__;
+		this->__tail__ = obj.__tail__;
+		this->__size__ = obj.__size__;
+		obj.null_out();
+
+		return*this;
+	}
+
+	~CDLList() {}
+};
+
+// assuming everything above this is ohk 
+//#################################################################################################################
+
+/* implementation of variadic type args Linked List. would contain any type of data */ 
+
+template<typename T>
+struct VariadicNode {
+	VariadicNode<void>* prev = NULL;
+	T data;
+	VariadicNode<void>* next = NULL;
+
+	bool has_value() { return true; }
+};
+
+template<>
+struct VariadicNode<void> {
+	VariadicNode<void>* prev = NULL;
+	VariadicNode<void>* next = NULL;
+	bool has_value() { return false; }
+};
+
+// Non-Templated Variable arg type Linked List
+class VLList {
+	using void_pointer = VariadicNode<void>*;
+	using void_value = VariadicNode<void>;
+
+	template<typename T>
+	using type_pointer = VariadicNode<T>*;
+
+	template<typename T>
+	using type_value = VariadicNode<T>;
+
+public:
+	type_pointer<int> __head__ = new type_value<int>{};
+	void_pointer __secondary_head__ = new void_value{NULL};
+	type_pointer<int> __tail__= new type_value<int>{};
+
+	int __size__ = 0;
+
+	VLList() {
+		// connecting the temporary mid to head
+		this->__head__->next = this->__secondary_head__;
+		this->__secondary_head__->prev = (void_pointer)this->__head__;
+
+		// connecting the temporary mid to tail
+		this->__tail__->prev = this->__secondary_head__;
+		this->__secondary_head__->next = (void_pointer)this->__tail__;
+	}
+
+	template<typename T>
+	void push_back(T elem) {
+		if (this->__size__ == 0) {
+			void_pointer v_temp = new void_value{ NULL };
+
+			type_pointer<T> temp = new type_value<T>{ NULL };
+			temp->data = elem;
+			temp->next = NULL;
+			temp->prev = NULL;
+
+			//the thing is the secondary head should now be considered as head to link the temp node;
+			this->__secondary_head__->next = (void_pointer)temp;
+			temp->prev = this->__secondary_head__;
+
+			// now v_temp should be linked to temp;
+			temp->next = v_temp;
+			v_temp->prev = (void_pointer)temp;
+
+			// connecting the v_temp to tail;
+			this->__tail__->prev = v_temp;
+			v_temp->next = (void_pointer)this->__tail__;
+		}
+	}
+
+private:
+	std::ostream& __print__(std::ostream& os) { return os; }
+
+	template <typename T>
+	std::ostream& __print__(std::ostream& os, T&& t) {
+		return os << std::forward<T>(t);
+	}
+
+	template <typename T, typename U, typename... Args>
+	std::ostream& __print__(std::ostream& os, T&& t, U&& u, Args&&... args) {
+		return __print__(__print__(os, std::forward<T>(t)) << ' ', std::forward<U>(u), std::forward<Args>(args)...);
+	}
+
+public:
+};
