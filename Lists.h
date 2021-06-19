@@ -87,7 +87,7 @@ namespace Py {
 	}
 
 //#################################################################################################################
-											/* Memory Storing Units */
+												/* Memory Storing Units */
 	// Singular Node
 	template<typename T>
 	struct SingleNode {
@@ -104,7 +104,7 @@ namespace Py {
 	};
 
 //#################################################################################################################
-											/* Grand Parent Level */
+												/* Grand Parent Level */
 
 	// Abstract Base Class for all the Linked List, that will be implmented
 	template<typename T>
@@ -115,10 +115,7 @@ namespace Py {
 		using pointer_dll = BinaryNode<T>*;
 		using value_dll = BinaryNode<T>;
 
-		friend ostream& operator<<(ostream& os, List<T>* l) {
-			l->show();
-			return os;
-		}
+		friend ostream& operator<<(ostream& os, List<T>* l) {l->show(); return os;}
 
 	protected:
 		pointer_sll _head_ = NULL;
@@ -138,6 +135,7 @@ namespace Py {
 
 		// insertion 
 		virtual List& insert(T val, int index) = 0;
+
 		// removal
 		virtual List& remove(int index) = 0;
 
@@ -198,7 +196,6 @@ namespace Py {
 				cout << "Debug Entry: " << entry << endl;
 
 			if (log_obj_details) {
-				cout << "Object Address: " << this << endl;
 				cout << "Object Type: " << typeid(*this).name() << endl;
 			}
 
@@ -230,7 +227,7 @@ namespace Py {
 	};
 
 //#################################################################################################################
-											  /* Parent Level */
+												  /* Parent Level */
 
 	// Abstract Base Class for Single Linked List, will be extended by Singly Linked List, and Circular Single Linked list
 	template<typename T>
@@ -438,7 +435,7 @@ namespace Py {
 
 				// putting the value to be deleted in _mid
 				pointer _mid = _left->next;
-				
+
 				// putting the value after _mid in _right
 				pointer _right = _mid->next;
 
@@ -447,7 +444,7 @@ namespace Py {
 
 				// deleteing mid
 				delete _mid;
-				
+
 				// nulling all the pointers
 				_left = _mid = _right = NULL;
 				this->__size__--;
@@ -481,7 +478,7 @@ namespace Py {
 			return *this;
 		}
 
-		T max() {
+		T max()  noexcept override {
 			T _max = this->_head_->data;
 			pointer temp = this->_head_;
 
@@ -489,11 +486,11 @@ namespace Py {
 				if (temp->data > _max) _max = temp->data;
 				temp = temp->next;
 			}
-
+			temp = NULL;
 			return _max;
 		}
 
-		T min() {
+		T min()  noexcept override {
 			T _min = this->_head_->data;
 			pointer temp = this->_head_;
 
@@ -501,11 +498,11 @@ namespace Py {
 				if (temp->data < _min) _min = temp->data;
 				temp = temp->next;
 			}
-
+			temp = NULL;
 			return _min;
 		}
 
-		void show() override {
+		void show() noexcept override {
 			pointer temp = this->_head_;
 			while (temp) {
 				cout << temp->data << " ";
@@ -520,83 +517,161 @@ namespace Py {
 			cout << endl;
 		}
 
-		// only possible search type in an sll
-		int linear_search(T elem) {
+		// linear search, returns first appearance
+		int linear_search(T elem)  noexcept override {
 			pointer temp = this->_head_;
 			int index = 0;
 			while (temp) {
 				if (temp->data == elem) {
+
+					// nulling before returning
+					temp = NULL;
 					return index;
 				}
 				temp = temp->next;
 				index++;
 			}
+			temp = NULL;
 			return -1;
 		}
 
 		// searches and puts the search result in the begining
-		int ilinear_search(T elem) {
+		int ilinear_search(T elem) noexcept override {
 			pointer temp = this->_head_;
 			pointer ttemp = NULL;
 			int index = 0;
 
-			if (temp->data == elem) {
-				return index;
-			}
+			// skipping the cached result, i.e. if the earlier search query was same, return the head->data
+			if (temp->data == elem) { return index; }
 
-			while (temp) {
+			// only traversing to the tail
+			while (temp != this->_tail_) {
 				if (temp->data == elem) {
 					ttemp->next = temp->next;
 					temp->next = this->_head_;
 					this->_head_ = temp;
+
+					// nulling before returning
+					temp = ttemp = NULL;
 					return index;
 				}
 				ttemp = temp;
 				temp = temp->next;
 				index++;
 			}
+
+			// taking into account that the searched query might be at the end of the list
+			if (temp->data == elem) { // as temp might have become the tail
+				// tail needs to be made head and ttemp needs to be made tail
+				// ttemp is the pointer one behind temp
+				// now temp needs to be connected to head and made head, while ttemp needs to be made tail
+				temp->next = this->_head_;
+				ttemp->next = NULL;
+				this->_head_ = temp;
+				this->_tail_ = ttemp;
+
+				// nulling before returning
+				temp = ttemp = NULL;
+				return index;
+			}
+
+			// nulling before returning
+			temp = ttemp = NULL;
 			return -1;
 		}
 
+	private:
+		// takes the order as:	ll -> l -> r -> rr
+		// the order to:		ll -> r -> l -> rr
+		void _swap_links_(pointer ll, pointer l, pointer r, pointer rr) {
+			ll->next = r;
+			r->next = l;
+			l->next = rr;
+		} // tested and works fine
+
+	public:
 		// bubble sort, since insertion sort requires bidirectional iterators
-		__SLLBase__& sort() {
-			// bubble sort
-			for (int i = 0; i < this->__size__; i++) {
-				pointer t_head = this->_head_->next;
-				pointer tt_head = this->_head_;
-				for (int j = 0; j < this->__size__ - i - 1; j++) {
-					if (t_head and (t_head->data < tt_head->data)) {
-						__swap(t_head->data, tt_head->data);
-					}
-					t_head = t_head->next;
-					tt_head = tt_head->next;
+		__SLLBase__& sort() noexcept override {
+			if (this->__size__ == 0 or this->__size__ == 1) {}
+
+			else if (this->__size__ == 2) {
+				if (this->_head_->data > this->_tail_->data) {
+					this->_tail_->next = this->_head_;
+					this->_head_->next = NULL;
+					__swap(this->_head_, this->_tail_);
 				}
 			}
+
+			// sorting link wise using sliding pointers, range [head,tail] and size >= 3
+			if (this->__size__ >= 3) {
+				// putting the min element in the begining
+				this->ilinear_search(this->min());
+
+				// putting a sentinel in the end
+				this->push_back(T{});
+
+				for (int i = 0; i < this->__size__ - 1; i++) {
+					pointer ll = this->_head_;
+					pointer l = ll->next;
+					pointer r = l->next;
+					pointer rr = r->next;
+
+					while (rr) {
+						if (l->data > r->data) {
+							// here links will be swapped along with data
+							this->_swap_links_(ll, l, r, rr);
+							// but the pointers are not in order now. making them in order
+							__swap(l, r);
+						}
+						ll = l;
+						l = r;
+						r = rr;
+						rr = rr->next;
+					}
+
+					// this->_tail_ = r;
+					ll = l = r = rr = NULL;
+				}
+				// removing the sentinel
+				this->pop_back();
+			}
+
 			return *this;
 		}
 
 		// assuming linked list is already sorted
-		__SLLBase__& sorted_insert(T elem) {
-			pointer _right = this->_head_->next;
-			pointer _left = this->_head_;
+		__SLLBase__& sorted_insert(T elem) noexcept override {
+			pointer _right = this->_head_;
+			pointer _left = NULL;
+
 			while (_right) {
 				if (_right->data > elem) break;
+				_left = _right;
 				_right = _right->next;
-				_left = _left->next;
 			}
 
-			pointer temp = new value{ NULL };
-			temp->data = elem;
-			temp->next = NULL;
+			// considering insertions at the boundary
+			if (_right == this->begin()) { this->push_front(elem); }
+			else if (_right == this->end()) { this->push_back(elem); }
 
-			_left->next = temp;
-			temp->next = _right;
+			// considerring insertion in middle
+			else {
+				// initializing a new node
+				pointer temp = new value{ NULL };
+				temp->data = elem;
+				temp->next = NULL;
 
-			this->__size__++;
+				// connecting the node
+				_left->next = temp;
+				temp->next = _right;
+
+				// increasing the size
+				this->__size__++;
+			}
 			return *this;
 		}
 
-		__SLLBase__& clear() {
+		__SLLBase__& clear()  noexcept override {
 			// deallocating memory
 			pointer _temp_ = NULL;
 			while (this->_head_) {
@@ -698,7 +773,7 @@ namespace Py {
 		/*	All are constant time operations	*/
 
 		// deleting the last element
-		__DLLBase__& pop_back() {
+		__DLLBase__& pop_back()  noexcept override {
 			if (this->__size__ == 0) {/* Do Nothing */ }
 			else {
 				pointer temp = this->__tail__;
@@ -712,7 +787,7 @@ namespace Py {
 		}
 
 		// deleting the begining element
-		__DLLBase__& pop_front() {
+		__DLLBase__& pop_front() noexcept override {
 			if (this->__size__ == 0) {}
 			else {
 				pointer temp = this->__head__;
@@ -726,7 +801,7 @@ namespace Py {
 		}
 
 		// inserting an element in the begining
-		__DLLBase__& push_front(T val) {
+		__DLLBase__& push_front(T val)  noexcept override {
 			if (this->__size__ == 0) {
 				this->__head__ = new value{ NULL };
 				this->__head__->prev = NULL;
@@ -754,7 +829,7 @@ namespace Py {
 		}
 
 		// inserting an element at the last
-		__DLLBase__& push_back(T val) {
+		__DLLBase__& push_back(T val)  noexcept override {
 			if (this->__size__ == 0) {
 				this->__head__ = new value{ NULL };
 				this->__head__->prev = NULL;
@@ -785,11 +860,11 @@ namespace Py {
 		/*	All are linear time operations		*/
 
 		// inserts provided element on the required index
-		__DLLBase__& insert(T val, int index) {
+		__DLLBase__& insert(T val, int index)  noexcept override {
 			// boundary cases will be handled by push front and back
 			if (index == 0) { this->push_front(val); }
 			else if (index == this->__size__) { this->push_back(val); }
-			
+
 			// insertion range: (__head__,__tail__)
 			else {
 				pointer temp = this->__head__;
@@ -823,7 +898,7 @@ namespace Py {
 		}
 
 		// removes the element from the required index
-		__DLLBase__& remove(int index) {
+		__DLLBase__& remove(int index)  noexcept override {
 			// again boundary cases will be managed by pop front and back
 			if (index == 0) { this->pop_front(); }
 			else if (index == this->__size__) { this->pop_back(); }
@@ -850,7 +925,7 @@ namespace Py {
 
 		/*	Searches	*/
 		// bound to be implemented here accordingly
-		int ilinear_search(T elem) {
+		int ilinear_search(T elem) noexcept override {
 			int index = 0;
 			pointer temp = this->__head__;
 
@@ -899,7 +974,7 @@ namespace Py {
 
 		/*	Sorting and Sorted Insertion	*/
 
-		__DLLBase__& sort() {
+		__DLLBase__& sort() noexcept override {
 			// implement insertion sort here
 
 			// putting the minimum element in the sorted position
@@ -956,33 +1031,43 @@ namespace Py {
 
 		__DLLBase__& sorted_insert(T elem) {
 			// assuming the list is already sorted
-
 			pointer temp = this->__head__;
 
 			// finding the position of insertion
-			while (temp->data < elem) { temp = temp->next; }
+			while (temp) {
+				if (temp->data > elem) break;
+				temp = temp->next;
+			}
 
-			pointer _left = temp->prev;
+			// considering boundary insertions
+			if (temp == this->begin()) { this->push_front(elem); }
+			else if (temp == this->end()) { this->push_back(elem); }
 
-			// initializing a new node
-			pointer _new_node = new value{ NULL };
-			_new_node->data = elem;
-			_new_node->prev = NULL;
-			_new_node->next = NULL;
+			// considering insertions in middle
+			else {
+				pointer _left = temp->prev;
 
-			// connecting the left to new node
-			_new_node->prev = _left;
-			_left->next = _new_node;
+				// initializing a new node
+				pointer _new_node = new value{ NULL };
+				_new_node->data = elem;
+				_new_node->prev = NULL;
+				_new_node->next = NULL;
 
-			// connecting new node to temp
-			_new_node->next = temp;
-			temp->prev = _new_node;
+				// connecting the left to new node
+				_new_node->prev = _left;
+				_left->next = _new_node;
 
-			// nulling the pointers out
-			_new_node = NULL;
-			temp = NULL;
-			_left = NULL;
+				// connecting new node to temp
+				_new_node->next = temp;
+				temp->prev = _new_node;
 
+				// nulling the pointers out
+				_new_node = NULL;
+				temp = NULL;
+				_left = NULL;
+
+				this->__size__++;
+			}
 			return *this;
 		}
 
@@ -1024,7 +1109,7 @@ namespace Py {
 		}
 
 		// convienient display
-		void show() override {
+		void show()  noexcept override {
 			pointer dl_ptr = this->__head__;
 			while (dl_ptr) {
 				cout << dl_ptr->data << " ";
@@ -1032,8 +1117,8 @@ namespace Py {
 			}cout << endl;
 		}
 
-		// linear search
-		int linear_search(T elem) {
+		// linear search, returns first appearance
+		int linear_search(T elem) noexcept override {
 			int index = 0;
 			pointer temp = this->__head__;
 			while (temp) {
@@ -1043,11 +1128,12 @@ namespace Py {
 				temp = temp->next;
 				index++;
 			}
+			temp = NULL;
 			return -1;
 		}
 
 		// max and min element
-		T max() {
+		T max()  noexcept override {
 			T max = this->__head__->data;
 			pointer temp = this->__head__;
 			while (temp) {
@@ -1056,10 +1142,11 @@ namespace Py {
 				}
 				temp = temp->next;
 			}
+			temp = NULL;
 			return max;
 		}
 
-		T min() {
+		T min()  noexcept override {
 			T min = this->__head__->data;
 			pointer temp = this->__head__;
 			while (temp) {
@@ -1068,10 +1155,11 @@ namespace Py {
 				}
 				temp = temp->next;
 			}
+			temp = NULL;
 			return min;
 		}
 
-		__DLLBase__& clear() {
+		__DLLBase__& clear()  noexcept override {
 			// clearing the previously allocated memory
 			pointer __temp__ = NULL;
 			while (this->__head__) {
@@ -1107,15 +1195,15 @@ namespace Py {
 	};
 
 //#################################################################################################################
-											/* Child Level */
-					/*	And also the level where all types of linked lists are implemented	*/
+												/* Child Level */
+						/*	And also the level where all types of linked lists are implemented	*/
 
 	/*
-		Base class already provides all the methods and facilities
-		so here only those functions will be implemented which require a parameter of same type
-		like copy and move construct
-		concat and merge
-		operator=
+			Base class already provides all the methods and facilities
+			so here only those functions will be implemented which require a parameter of same type
+			like copy and move construct
+			concat and merge
+			operator=
 	*/
 
 	// Singly Linked List
@@ -1361,26 +1449,6 @@ namespace Py {
 		// bool is_circular = false;
 
 	public:
-		void straighten() { 
-			if (this->is_circular) {
-				this->_tail_->next = NULL;
-				this->is_circular = false;
-			}
-		}
-
-		void circularize() {
-			if (!this->is_circular) {
-				this->_tail_->next = this->_head_;
-				this->is_circular = true;
-			}
-		}
-
-		CSLList& clear() {
-			this->straighten();
-			__SLLBase__<T>::clear();
-			return *this;
-		}
-
 		// a circular linked list should not be empty
 		CSLList() = delete;
 
@@ -1435,6 +1503,37 @@ namespace Py {
 			return *this;
 		}
 
+		void straighten() {
+			if (this->is_circular) {
+				this->_tail_->next = NULL;
+				this->is_circular = false;
+			}
+		}
+
+		void circularize() {
+			if (!this->is_circular) {
+				this->_tail_->next = this->_head_;
+				this->is_circular = true;
+			}
+		}
+
+		CSLList& clear() noexcept override {
+			this->straighten();
+			__SLLBase__<T>::clear();
+			return *this;
+		}
+
+		CSLList& sort() noexcept override {
+			this->straighten();
+			__SLLBase__<T>::sort();
+			return *this;
+		}
+
+		void show() noexcept override {
+			this->straighten();
+			__SLLBase__<T>::show();
+		}
+
 		// tests circularity of the list
 		bool test_circularity() {
 			if (this->__size__ == 1 and this->_head_ == this->_tail_) { return true; }
@@ -1443,9 +1542,9 @@ namespace Py {
 			pointer q = this->_head_->next;
 
 			while (q) {
-				if (p == q) { 
+				if (p == q) {
 					this->is_circular = true;
-					return true; 
+					return true;
 				}
 
 				p = p->next;
@@ -1571,28 +1670,6 @@ namespace Py {
 		// bool is_circular = false;
 
 	public:
-		void circularize() {
-			if (!this->is_circular) {
-				this->__tail__->next = this->__head__;
-				this->__head__->prev = this->__tail__;
-				this->is_circular = true;
-			}
-		}
-
-		void straighten() {
-			if (this->is_circular) {
-				this->__tail__->next = NULL;
-				this->__head__->prev = NULL;
-				this->is_circular = false;
-			}
-		}
-
-		CDLList& clear() {
-			if(this->is_circular) this->straighten();
-			__DLLBase__<T>::clear();
-			return *this;
-		}
-
 		// a circular linked list cannot be empty
 		CDLList() = delete;
 
@@ -1650,6 +1727,39 @@ namespace Py {
 			obj.null_out();
 
 			return*this;
+		}
+
+		void circularize() {
+			if (!this->is_circular) {
+				this->__tail__->next = this->__head__;
+				this->__head__->prev = this->__tail__;
+				this->is_circular = true;
+			}
+		}
+
+		void straighten() {
+			if (this->is_circular) {
+				this->__tail__->next = NULL;
+				this->__head__->prev = NULL;
+				this->is_circular = false;
+			}
+		}
+
+		CDLList& clear() noexcept override {
+			this->straighten();
+			__DLLBase__<T>::clear();
+			return *this;
+		}
+
+		CDLList& sort() noexcept override {
+			this->straighten();
+			__DLLBase__<T>::sort();
+			return *this;
+		}
+
+		void show() noexcept override {
+			this->straighten();
+			__DLLBase__<T>::show();
 		}
 
 		bool test_circularity() {
