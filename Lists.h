@@ -1,11 +1,21 @@
 #ifndef _LISTS_H_
 #define _LISTS_H_
 
-// this statement provides a confirmation that a particular function is strongly debugged and will not produce errors
-#define strongly_debugged
-
 #include <iostream>
 using namespace std;
+
+// just a piece of code that determines if the passed paramenter is an iterator
+template <class _iter>
+using _iter_cat_t = typename iterator_traits<_iter>::iterator_category;
+
+template <class... _Types>
+using void_tt = void;
+
+template <class _Ty, class = void>
+constexpr bool _is_iterator_v = false;
+
+template <class _Ty>
+constexpr bool _is_iterator_v<_Ty, void_tt<_iter_cat_t<_Ty>>> = true;
 
 /*
 # List-Library
@@ -115,7 +125,10 @@ namespace Py {
 		using pointer_dll = BinaryNode<T>*;
 		using value_dll = BinaryNode<T>;
 
-		friend ostream& operator<<(ostream& os, List<T>* l) {l->show(); return os;}
+		friend ostream& operator<<(ostream& os, List<T>& l) {
+			l.show();;
+			return os;
+		}
 
 	protected:
 		pointer_sll _head_ = NULL;
@@ -137,13 +150,13 @@ namespace Py {
 		virtual List& insert(T val, int index) = 0;
 
 		// removal
-		virtual List& remove(int index) = 0;
+		virtual T remove(int index) = 0;
 
 		// popping an element at the back
-		virtual List& pop_back() = 0;
+		virtual T pop_back() = 0;
 
 		// popping an element from front
-		virtual List& pop_front() = 0;
+		virtual T pop_front() = 0;
 
 		// pushing an element at the back
 		virtual List& push_front(T val) = 0;
@@ -196,6 +209,7 @@ namespace Py {
 				cout << "Debug Entry: " << entry << endl;
 
 			if (log_obj_details) {
+				cout << "Object Address: " << this << endl;
 				cout << "Object Type: " << typeid(*this).name() << endl;
 			}
 
@@ -339,31 +353,33 @@ namespace Py {
 		}
 
 		// deletes from beginning
-		__SLLBase__& pop_front() noexcept override {
+		T pop_front() noexcept override {
+			T val{};
 			// empty list case covered
 			if (this->__size__ == 0) {
 				// do nothing
-				return *this;
 			}
 			else {
 				pointer temp = this->_head_;
 				// head goes to head's next
 				this->_head_ = this->_head_->next;
 				// temp is deleted
+				val = temp->data;
 				delete temp;
 				// nulling out temp
 				temp = NULL;
 				// reducing the size
 				this->__size__--;
-				return *this;
 			}
+			return val;
 		}
 
 		// deletes from end
-		__SLLBase__& pop_back() noexcept override {
+		T pop_back() noexcept override {
+			T val{};
 			// empty list case covered
 			if (this->__size__ == 0) {
-				return *this;
+				// do nothing
 			}
 			else {
 				pointer temp = this->_head_;
@@ -373,6 +389,7 @@ namespace Py {
 
 				// nulling tail's next
 				this->_tail_->next = NULL;
+				val = this->_tail_->data;
 				// deleting tail data
 				delete this->_tail_;
 				// initializing tail to temp
@@ -383,9 +400,8 @@ namespace Py {
 				this->_tail_->next = NULL;
 				// reducing the size
 				this->__size__--;
-
-				return *this;
 			}
+			return val;
 		}
 
 		// inserts at index, provided the index is correct
@@ -422,12 +438,13 @@ namespace Py {
 		}
 
 		// removes the value at the provided index
-		__SLLBase__& remove(int index)  noexcept override {
+		T remove(int index)  noexcept override {
 			// for boundary cases pop back and front will help
-			if (index == this->__size__) { this->pop_back(); }
-			else if (index == 0) { this->pop_front(); }
+			if (index == this->__size__) { return this->pop_back(); }
+			else if (index == 0) { return this->pop_front(); }
 
 			else if (index > 0 and index < this->__size__) {
+				T val{};
 				pointer _left = this->_head_;
 
 				// setting the value to one before the area of removal
@@ -442,14 +459,15 @@ namespace Py {
 				// connecting _left to _right
 				_left->next = _right;
 
+				val = _mid->data;
 				// deleteing mid
 				delete _mid;
 
 				// nulling all the pointers
 				_left = _mid = _right = NULL;
 				this->__size__--;
+				return val;
 			}
-			return *this;
 		}
 
 		__SLLBase__& reverse_by_links() {
@@ -693,19 +711,17 @@ namespace Py {
 
 	// Abstract Base Class for Double Linked List, will be extended by Double Linked List, and Circular Double Linked list
 	template<typename T>
-	class __DLLBase__ abstract : public List<T> {
+	class __DLLBase__ abstract : public List<T> { // gets more perkier functions as it is more usable as compared to SLL and CSLL
 		using pointer = BinaryNode<T>*;
 		using value = BinaryNode<T>;
 
-		friend ostream& operator<<(ostream& os, __DLLBase__<T>& dll) {
-			dll.show();
-			return os;
-		}
+		friend ostream& operator<<(ostream& os, __DLLBase__<T>& dll) {dll.show();return os;}
 
 	public:
 		// size has to be kept private if it gets modified by outside interference member functions will not work right
 		int __size__ = 0;
 
+		// classic methods of construction
 		__DLLBase__() = default;
 
 		__DLLBase__(initializer_list<T> init_l) {
@@ -732,6 +748,67 @@ namespace Py {
 				this->__size__++;
 			}
 		}
+
+		// extra helpful constructors
+		// - initialization through an array
+		// - initialization through iterators
+		// - intialization through end and begin pointers
+// i dont want to provide support for direct Array Object intialization as it will require PyBasics.h to be include in this
+
+		// raw array intialization support
+		template<size_t s>
+		__DLLBase__(T (&arr) [s]) {
+			int i = 0;
+			this->__head__ = new value{ NULL };
+			this->__head__->data = arr[i];
+			this->__head__->next = NULL;
+			this->__head__->prev = NULL;
+			this->__tail__ = this->__head__;
+			this->__size__++;
+			++i;
+			while (i < s) {
+				pointer temp = new value{ NULL };
+				temp->data = arr[i];
+				temp->prev = NULL;
+				temp->next = NULL;
+
+				this->__tail__->next = temp;
+				temp->prev = this->__tail__;
+				this->__tail__ = temp;
+				temp = NULL;
+				++i;
+				this->__size__++;
+			}
+		}
+
+		// two pointers to a contiguous memory block based initialization
+		__DLLBase__(T* begin, T* end) {
+			int i = 0;
+			int s = end - begin;
+			this->__head__ = new value{ NULL };
+			this->__head__->data = *(begin + i);
+			this->__head__->next = NULL;
+			this->__head__->prev = NULL;
+			this->__tail__ = this->__head__;
+			this->__size__++;
+			++i;
+			while (i < s) {
+				pointer temp = new value{ NULL };
+				temp->data = *(begin + i);
+				temp->prev = NULL;
+				temp->next = NULL;
+
+				this->__tail__->next = temp;
+				temp->prev = this->__tail__;
+				this->__tail__ = temp;
+				temp = NULL;
+				++i;
+				this->__size__++;
+			}
+		}
+
+		// the iterator based constructor might not work if implemented here and called from derived class
+		// so it is implmented in derived class itself
 
 		BinaryNode<T>* begin() { return this->__head__; }
 		BinaryNode<T>* head() { return this->__head__; }
@@ -773,31 +850,35 @@ namespace Py {
 		/*	All are constant time operations	*/
 
 		// deleting the last element
-		__DLLBase__& pop_back()  noexcept override {
+		T pop_back()  noexcept override {
+			T val{};
 			if (this->__size__ == 0) {/* Do Nothing */ }
 			else {
 				pointer temp = this->__tail__;
 				this->__tail__ = this->__tail__->prev;
 				this->__tail__->next = NULL;
+				val = temp->data;
 				delete temp;
 				temp = NULL;
 				this->__size__--;
 			}
-			return*this;
+			return val;
 		}
 
 		// deleting the begining element
-		__DLLBase__& pop_front() noexcept override {
+		T pop_front() noexcept override {
+			T val{};
 			if (this->__size__ == 0) {}
 			else {
 				pointer temp = this->__head__;
 				this->__head__ = this->__head__->next;
 				this->__head__->prev = NULL;
+				val = temp->data;
 				delete temp;
 				temp = NULL;
 				this->__size__--;
 			}
-			return*this;
+			return val;
 		}
 
 		// inserting an element in the begining
@@ -898,13 +979,14 @@ namespace Py {
 		}
 
 		// removes the element from the required index
-		__DLLBase__& remove(int index)  noexcept override {
+		T remove(int index)  noexcept override {
 			// again boundary cases will be managed by pop front and back
-			if (index == 0) { this->pop_front(); }
-			else if (index == this->__size__) { this->pop_back(); }
+			if (index == 0) { return this->pop_front(); }
+			else if (index == this->__size__) { return this->pop_back(); }
 
 			// removal range(__head__, __tail__)
 			else {
+				T val{};
 				pointer temp = this->__head__;
 				for (int i = 0; i < index; i++) temp = temp->next;
 
@@ -912,6 +994,7 @@ namespace Py {
 				pointer _mid = temp;
 
 				temp = temp->next;
+				val = _mid->data;
 				delete _mid;
 
 				// connecting left to temp
@@ -919,8 +1002,8 @@ namespace Py {
 				temp->prev = _left;
 
 				this->__size__--;
+				return val;
 			}
-			return *this;
 		}
 
 		/*	Searches	*/
@@ -1157,6 +1240,58 @@ namespace Py {
 			}
 			temp = NULL;
 			return min;
+		}
+
+		/*		Some Perk Functions for DLL and CDLL	*/
+		// remove_all
+		// remove_if
+		// erase a section
+		// rotation anticlockwise and clockwise
+		// _join_ to be overridden as concat
+		// _merge_ to be overridden as merge
+		// its not quite right but I'll try giving an operator[] with negative indices support
+
+		// give indices for the subset that needs to be erased
+		__DLLBase__& erase(int begin, int end) {
+			// to make sure that the parameters are in bound
+			if (begin < this->__size__ and end <= this->__size__) {
+
+				// whole list needs to be erased
+				if ((end - begin == this->__size__)) { this->clear(); }
+
+				// putting a sentinal
+				this->push_back(T{});
+
+				if ((end - begin < this->__size__)) {
+					// creating a pointer traversing it to the spot and then triggering a delete sequence
+
+					pointer temp = this->__head__;
+					int i = 0;
+					for (; i < begin; i++) temp = temp->next;
+
+					pointer temp_prev = temp->prev;
+
+					pointer _goat_ = NULL;
+					// triggerring the delete sequence
+					while (i < end) {
+						_goat_ = temp;
+						temp = temp->next;
+						delete _goat_;
+						_goat_ = NULL;
+						i++;
+					}
+
+					// now connecting temp_prev with temp
+					temp_prev->next = temp;
+					temp->prev = temp_prev;
+
+					this->__size__ -= (end - begin);
+				}
+
+				// removing the sentinal
+				this->pop_back();
+			}
+			return *this;
 		}
 
 		__DLLBase__& clear()  noexcept override {
@@ -1570,6 +1705,40 @@ namespace Py {
 	public:
 		DLList() : __DLLBase__<T>() {}
 		DLList(initializer_list<T> init_l) : __DLLBase__<T>(init_l) {}
+
+		// array based initialization
+		template<size_t s>
+		DLList(T(&arr)[s]) : __DLLBase__<T>(arr) {}
+
+		// two pointers to a contiguous memory block based initialization
+		DLList(T* begin, T* end) : __DLLBase__<T>(begin, end) {}
+
+		// Iterator based initialization, supports iterators that have an overloaded ++ and * operator
+		// i.e. supports initialization from vector<>, deque<>, list<>
+		template<typename _Iter, enable_if_t<_is_iterator_v<_Iter>, int> = 0>
+		DLList(_Iter begin, _Iter end) {
+			_Iter it = begin;
+			this->__head__ = new value{ NULL };
+			this->__head__->data = *it;
+			this->__head__->next = NULL;
+			this->__head__->prev = NULL;
+			this->__tail__ = this->__head__;
+			this->__size__++;
+			++it;
+			while (it != end) {
+				pointer temp = new value{ NULL };
+				temp->data = *it;
+				temp->prev = NULL;
+				temp->next = NULL;
+
+				this->__tail__->next = temp;
+				temp->prev = this->__tail__;
+				this->__tail__ = temp;
+				temp = NULL;
+				++it;
+				this->__size__++;
+			}
+		}
 
 		// copy, move constructors and assignments
 		DLList(const DLList& obj) {
