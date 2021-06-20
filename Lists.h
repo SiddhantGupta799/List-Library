@@ -4,7 +4,7 @@
 #include <iostream>
 using namespace std;
 
-// just a piece of code that determines if the passed paramenter is an iterator
+// just a piece of code that determines if the passed parameter is an iterator
 template <class _iter>
 using _iter_cat_t = typename iterator_traits<_iter>::iterator_category;
 
@@ -12,10 +12,10 @@ template <class... _Types>
 using void_tt = void;
 
 template <class _Ty, class = void>
-constexpr bool _is_iterator_v = false;
+constexpr bool _is_iterator_v_list_ = false;
 
 template <class _Ty>
-constexpr bool _is_iterator_v<_Ty, void_tt<_iter_cat_t<_Ty>>> = true;
+constexpr bool _is_iterator_v_list_<_Ty, void_tt<_iter_cat_t<_Ty>>> = true;
 
 /*
 # List-Library
@@ -1155,7 +1155,7 @@ namespace Py {
 		}
 
 		/*	Reversal	*/
-		__DLLBase__& reverse_by_links() {
+		__DLLBase__& reverse_by_links() noexcept override {
 			// using sliding pointers
 			pointer p = this->__head__;
 
@@ -1243,13 +1243,7 @@ namespace Py {
 		}
 
 		/*		Some Perk Functions for DLL and CDLL	*/
-		// remove_all
-		// remove_if
-		// erase a section
-		// rotation anticlockwise and clockwise
-		// _join_ to be overridden as concat
 		// _merge_ to be overridden as merge
-		// its not quite right but I'll try giving an operator[] with negative indices support
 
 		// give indices for the subset that needs to be erased
 		__DLLBase__& erase(int begin, int end) {
@@ -1294,7 +1288,224 @@ namespace Py {
 			return *this;
 		}
 
-		__DLLBase__& clear()  noexcept override {
+		// provide a functor or lambda
+		template<class Func>
+		__DLLBase__& remove_if(Func function) {
+			// clearing off invalid entities from extremes
+			while (function(this->__tail__->data))this->pop_back();
+			while (function(this->__head__->data))this->pop_front();
+
+			pointer temp = this->__head__;
+			while (temp) {
+				if (function(temp->data)) {
+					// making a copy
+					pointer copy_temp = temp;
+					// if there exists a sequence of values to be removed
+					while (function(copy_temp->data)) {
+						// delete manouver keeps taking on until the consecutive occurrences of elem get deleted
+						// taking out the prev and next of copy_temp;
+						pointer prev_temp = copy_temp->prev;
+						pointer next_temp = copy_temp->next;
+
+						// linking prev_temp and next_temp
+						prev_temp->next = next_temp;
+						next_temp->prev = prev_temp;
+
+						// deallocating the memory for copy_temp;
+						delete copy_temp;
+
+						// now copy_temp should point on next_temp and prev_temp and next_temp needs to be nulled
+						copy_temp = next_temp;
+
+						next_temp = prev_temp = NULL;
+
+						// all of this causes an invalidation to temp so temp should also be copy_temp
+						temp = copy_temp;
+						// by this temp has already moved on to the next node
+						this->__size__--;
+					}
+				}
+				temp = temp->next;
+			}
+			return  *this;
+		}
+
+	protected:
+		void __concat__(pointer head, pointer tail) {
+			// connecting the tail to head
+			this->__tail__->next = head;
+			head->prev = this->__tail__;
+			
+			this->__tail__ = tail;
+		}
+
+	private:
+		struct is_elem {
+			T t;
+			is_elem(T _t) : t{ _t } {}
+			bool operator()(T e) {
+				return t == e;
+			}
+		};
+
+	/*	
+	Mechanism
+
+	* node = <0>
+	* link = -
+	* pointer = ^
+	* times = 2
+	list looks like ->            <0>-<0>-<0>-<0>-<0>-<0>
+								   ^ head              ^tail
+
+								  <0>-<0>-<0>-<0>-<0>-<0>           // traversing head_of_second to no. of times
+					  head_of_first^       ^head_of_second
+
+								  <0>-<0>-<0>-<0>-<0>-<0>
+					  head_of_first^       ^head_of_second
+									   ^prev_of_head_of_second
+
+								  <0>-<0>   <0>-<0>-<0>-<0>         // link is broken by prev_of_head_of_second, which is then grounded NULL
+					  head_of_first^         ^head_of_second
+
+								  <0>-<0>	<0>-<0>-<0>-<0>         // both lists are reversed by links causing the heads to become tail
+					  head_of_first^                     ^head_of_second
+					  tail_of_first^                     ^tail_of_second
+
+	> Now the Heads are traversed back to their positions
+
+								  <0>-<0>   <0>-<0>-<0>-<0>
+					  head_of_first^         ^head_of_second
+						  tail_of_first^                 ^tail_of_second
+
+	> tail_of_first and head_of_second establish a link and are grounded NULL
+								  <0>-<0>-<0>-<0>-<0>-<0>
+					  head_of_first^                   ^tail_of_second
+
+	> Now the head_of_first is made head, and tail_of_second is made tail
+
+	> And then the whole list is then reversed to complete the procedure of rotation
+	*/
+		void __rotate__(int point) {
+			// creating two lists, and then reversing them
+			pointer _head_of_first_ = this->__head__;
+			pointer _head_of_second_ = this->__head__;
+
+			// _head_of_second_ will be traversed to the point of rotation
+			int i = 0;
+			while (i < point) {
+				_head_of_second_ = _head_of_second_->next;
+				i++;
+			}
+
+			// next of previous node of _head_of_second_ will be made NULL
+			// creating a bifurcation
+			pointer prev_head_of_second = _head_of_second_->prev;
+			prev_head_of_second->next = NULL;
+			_head_of_second_->prev = NULL;
+
+			// no more required now
+			prev_head_of_second = NULL;
+
+			// now two segments have been made
+
+			// reversing first segment
+			pointer p = _head_of_first_;
+			while (p) {
+				pointer temp = p->next;
+				p->next = p->prev;
+				p->prev = temp;
+
+				p = p->prev;
+
+				if (p != NULL and p->next == NULL) this->__head__ = p;
+			}
+
+			// reversing second segment
+			p = _head_of_second_;
+			while (p) {
+				pointer temp = p->next;
+				p->next = p->prev;
+				p->prev = temp;
+
+				p = p->prev;
+
+				if (p != NULL and p->next == NULL) this->__head__ = p;
+			}
+
+			// reversal has converted the head to tail
+			pointer _tail_of_first_ = _head_of_first_;
+
+			// traversing _head_of_first_ to its original position, i.e. being head of first list segment
+			while (_head_of_first_->prev) {
+				_head_of_first_ = _head_of_first_->prev;
+			}
+
+			/* // for debugging purposes, will show first segment
+			p = _head_of_first_;
+			while (p) {
+				cout << p->data << " ";
+				p = p->next;
+			}
+			cout << endl;
+			*/
+
+			pointer _tail_of_second_ = _head_of_second_;
+
+			// traversing _head_of_second_ to its original position, i.e. being head of second list segment
+			while (_head_of_second_->prev) {
+				_head_of_second_ = _head_of_second_->prev;
+			}
+
+			/* // for debugging purposes, will show the second segment of the list
+			p = _head_of_second_;
+			while (p) {
+				cout << p->data << " ";
+				p = p->next;
+			}
+			cout << endl;
+			*/
+
+			// connecting tail_of_first to head_of_second
+			_tail_of_first_->next = _head_of_second_;
+			_head_of_second_->prev = _tail_of_first_;
+
+			// no more required now
+			_tail_of_first_ = _head_of_second_ = NULL;
+
+			/* // for debugging purposes
+			p = _head_of_first_;
+			while (p) {
+				cout << p->data << " ";
+				p = p->next;
+			}
+			cout << endl;*/
+
+			this->__head__ = _head_of_first_;
+			this->__tail__ = _tail_of_second_;
+
+			// no more required Now
+			_tail_of_second_ = _head_of_first_ = NULL;
+
+			// finalizing the process of rotation
+			this->reverse_by_links();
+		}
+
+	public:
+		__DLLBase__& remove_all(T elem) {
+			this->remove_if(is_elem(elem));
+			return *this;
+		}
+
+		__DLLBase__& rotate(int times = 1, bool clockwise_or_anti_cloackwise = false) {
+			if (times > 0 and times < this->__size__) {
+				if (clockwise_or_anti_cloackwise) this->__rotate__(times);
+				else this->__rotate__(this->__size__ - times);
+			}
+			return *this;
+		}
+
+		__DLLBase__& clear() noexcept override {
 			// clearing the previously allocated memory
 			pointer __temp__ = NULL;
 			while (this->__head__) {
@@ -1303,7 +1514,7 @@ namespace Py {
 				delete __temp__;
 				__temp__ = NULL;
 			}
-			this->__size__ = 0;
+			this->null_out();
 			return *this;
 		}
 
@@ -1715,7 +1926,7 @@ namespace Py {
 
 		// Iterator based initialization, supports iterators that have an overloaded ++ and * operator
 		// i.e. supports initialization from vector<>, deque<>, list<>
-		template<typename _Iter, enable_if_t<_is_iterator_v<_Iter>, int> = 0>
+		template<typename _Iter, enable_if_t<_is_iterator_v_list_<_Iter>, int> = 0>
 		DLList(_Iter begin, _Iter end) {
 			_Iter it = begin;
 			this->__head__ = new value{ NULL };
@@ -1797,13 +2008,9 @@ namespace Py {
 		DLList& concat(DLList<T> obj) {
 			if (this->__size__ > 0) {
 				// joining the two lists
-				this->__tail__->next = obj.__head__;
-				obj.__head__->prev = this->__tail__;
-
-				this->__tail__ = obj.__tail__;
+				this->__concat__(obj.__head__, obj.__tail__);
 
 				this->__size__ += obj.__size__;
-
 				obj.null_out();
 			}
 			else { this->operator=(obj); }
@@ -1844,6 +2051,40 @@ namespace Py {
 
 		CDLList(initializer_list<T> init_l) : __DLLBase__<T>(init_l) {
 			this->is_circular = false;
+		}
+
+		// array based initialization
+		template<size_t s>
+		CDLList(T(&arr)[s]) : __DLLBase__<T>(arr) {}
+
+		// two pointers to a contiguous memory block based initialization
+		CDLList(T* begin, T* end) : __DLLBase__<T>(begin, end) {}
+
+		// Iterator based initialization, supports iterators that have an overloaded ++ and * operator
+		// i.e. supports initialization from vector<>, deque<>, list<>
+		template<typename _Iter, enable_if_t<_is_iterator_v_list_<_Iter>, int> = 0>
+		CDLList(_Iter begin, _Iter end) {
+			_Iter it = begin;
+			this->__head__ = new value{ NULL };
+			this->__head__->data = *it;
+			this->__head__->next = NULL;
+			this->__head__->prev = NULL;
+			this->__tail__ = this->__head__;
+			this->__size__++;
+			++it;
+			while (it != end) {
+				pointer temp = new value{ NULL };
+				temp->data = *it;
+				temp->prev = NULL;
+				temp->next = NULL;
+
+				this->__tail__->next = temp;
+				temp->prev = this->__tail__;
+				this->__tail__ = temp;
+				temp = NULL;
+				++it;
+				this->__size__++;
+			}
 		}
 
 		CDLList(const CDLList& obj) {
@@ -1923,6 +2164,21 @@ namespace Py {
 		CDLList& sort() noexcept override {
 			this->straighten();
 			__DLLBase__<T>::sort();
+			return *this;
+		}
+
+		// for concatenation
+		CDLList& concat(CDLList<T> obj) {
+			this->straighten();
+
+			if (this->__size__ > 0) {
+				// joining the two lists
+				this->__concat__(obj.__head__, obj.__tail__);
+
+				this->__size__ += obj.__size__;
+				obj.null_out();
+			}
+			else { this->operator=(obj); }
 			return *this;
 		}
 
