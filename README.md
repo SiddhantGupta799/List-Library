@@ -5,17 +5,17 @@ This Library has an Inheritance based model of implementing Linked Lists.
 The model looks like this
 
 		Grand Parent:		abstract class List
-		Derived:		abstract class __SLLBase__ and abstract class __DLLBase__
+		Derived:		abstract class __SLLBase__ and abstract class __DLLBase__ and an interface __CLLBase__
 
 		Parent:			abstract class __SLLBase__
 		Children:		class SLList and class CSLList (both not abstract)
 						- SLList: Singly Linked List
-						- CSLList: Circular Singly Linked List
+						- CSLList: Circular Singly Linked List	(also inherits __CLLBase__)
 
 		Parent:			abstract class __DLLBase__
 		Children:		class DLList and class CDLList (both not abstract)
 						- DLList: Doubly Linked List
-						- CDLList: Circular Doubly Linked List
+						- CDLList: Circular Doubly Linked List  (also inherits __CLLBase__)
 
 class List provides all the methods that a Linked List has to offer, of which includes:
 
@@ -33,7 +33,6 @@ class List provides all the methods that a Linked List has to offer, of which in
 		- display to console
 		- debugging info by log_properties function
 		
-	  
 Support for Iterators has also been added. 
 
 	- DLList class supports bi-directional iterators and bi-directional reverse iterators.
