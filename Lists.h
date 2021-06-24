@@ -2,20 +2,9 @@
 #define _LISTS_H_
 
 #include <iostream>
+#include "Nodes.h"
+
 using namespace std;
-
-// just a piece of code that determines if the passed parameter is an iterator
-template <class _iter>
-using _iter_cat_t = typename iterator_traits<_iter>::iterator_category;
-
-template <class... _Types>
-using void_tt = void;
-
-template <class _Ty, class = void>
-constexpr bool _is_iterator_v_list_ = false;
-
-template <class _Ty>
-constexpr bool _is_iterator_v_list_<_Ty, void_tt<_iter_cat_t<_Ty>>> = true;
 
 /*
 # List-Library
@@ -97,21 +86,15 @@ namespace Py {
 	}
 
 //#################################################################################################################
-												/* Memory Storing Units */
-	// Singular Node
-	template<typename T>
-	struct SingleNode {
-		T data;
-		SingleNode<T>* next = NULL;
-	};
+//		Here are some Code executers that execute a particular code (which will be provided by you)
+//		on each node of any type of Linked List, these are like python decorators, your code gets
+//		embedded in another code and gets executed
 
-	// Binary Node
-	template <typename T>
-	struct BinaryNode {
-		BinaryNode<T>* prev = NULL;
-		T data;
-		BinaryNode<T>* next = NULL;
-	};
+// pitch in the typename, object and the code you want to run on SLL or CSLL
+#define execute_on_sll(Type, Object, Code) for(SingleNode<Type>* sn = Object.begin(); sn != Object.end(); sn = sn->next) {Code}
+
+// pitch in the typename, object and the code you want to run on DLL or CDLL
+#define execute_on_dll(Type, Object, Code) for(BinaryNode<Type>* bn = Object.begin(); bn != Object.end(); bn = bn->next) {Code}
 
 //#################################################################################################################
 												/* Grand Parent Level */
@@ -279,6 +262,8 @@ namespace Py {
 		}
 
 	public:
+		using forward_iterator = _SingleNode_Iterator_<T>;
+
 		__SLLBase__() = default;
 
 		__SLLBase__(initializer_list<T> init_l) {
@@ -302,10 +287,21 @@ namespace Py {
 
 		int size() { return this->__size__; }
 
-		SingleNode<T>* begin() { return this->_head_; }
-		SingleNode<T>* head() { return this->_head_; }
-		SingleNode<T>* end() { return this->_tail_->next; }
-		SingleNode<T>* tail() { return this->_tail_; }
+		_SingleNode_Iterator_<T> begin() {
+			return _SingleNode_Iterator_<T>(this->_head_);
+		}
+
+		_SingleNode_Iterator_<T> head() {
+			return _SingleNode_Iterator_<T>(this->_head_);
+		}
+
+		_SingleNode_Iterator_<T> end() {
+			return _SingleNode_Iterator_<T>(this->_tail_->next);
+		}
+
+		_SingleNode_Iterator_<T> tail() {
+			return _SingleNode_Iterator_<T>(this->_tail_);
+		}
 
 	protected:
 		// the functions that directly nulls out things without deleting
@@ -669,8 +665,8 @@ namespace Py {
 			}
 
 			// considering insertions at the boundary
-			if (_right == this->begin()) { this->push_front(elem); }
-			else if (_right == this->end()) { this->push_back(elem); }
+			if (this->begin() == _right) { this->push_front(elem); }
+			else if (this->end() == _right) { this->push_back(elem); }
 
 			// considerring insertion in middle
 			else {
@@ -718,6 +714,9 @@ namespace Py {
 		friend ostream& operator<<(ostream& os, __DLLBase__<T>& dll) {dll.show();return os;}
 
 	public:
+		using iterator = _BinaryNode_Iterator_<T>;
+		using reverse_iterator = _BinaryNode_Reverse_Iterator_<T>;
+
 		// size has to be kept private if it gets modified by outside interference member functions will not work right
 		int __size__ = 0;
 
@@ -810,10 +809,33 @@ namespace Py {
 		// the iterator based constructor might not work if implemented here and called from derived class
 		// so it is implmented in derived class itself
 
-		BinaryNode<T>* begin() { return this->__head__; }
-		BinaryNode<T>* head() { return this->__head__; }
-		BinaryNode<T>* end() { return this->__tail__->next; }
-		BinaryNode<T>* tail() { return this->__tail__; }
+		// Iterator Support for Traversal
+
+		_BinaryNode_Iterator_<T> begin() {
+			return _BinaryNode_Iterator_<T>(this->__head__);
+		}
+
+		_BinaryNode_Iterator_<T> head() {
+			return _BinaryNode_Iterator_<T>(this->__head__);
+		}
+
+		_BinaryNode_Iterator_<T> end() {
+			return _BinaryNode_Iterator_<T>(this->__tail__->next);
+		}
+
+		_BinaryNode_Iterator_<T> tail() {
+			return _BinaryNode_Iterator_<T>(this->__tail__);
+		}
+
+		_BinaryNode_Reverse_Iterator_<T> rbegin() {
+			return _BinaryNode_Reverse_Iterator_<T>(this->__tail__);
+		}
+
+		_BinaryNode_Reverse_Iterator_<T> rend() {
+			return _BinaryNode_Reverse_Iterator_<T>(this->__head__->prev);
+		}
+
+		// ---x--- Iterator Support
 
 		int size() { return this->__size__; }
 
@@ -1123,8 +1145,8 @@ namespace Py {
 			}
 
 			// considering boundary insertions
-			if (temp == this->begin()) { this->push_front(elem); }
-			else if (temp == this->end()) { this->push_back(elem); }
+			if (this->begin() == temp) { this->push_front(elem); }
+			else if (this->end() == temp) { this->push_back(elem); }
 
 			// considering insertions in middle
 			else {
@@ -1921,12 +1943,9 @@ namespace Py {
 		template<size_t s>
 		DLList(T(&arr)[s]) : __DLLBase__<T>(arr) {}
 
-		// two pointers to a contiguous memory block based initialization
-		DLList(T* begin, T* end) : __DLLBase__<T>(begin, end) {}
-
 		// Iterator based initialization, supports iterators that have an overloaded ++ and * operator
 		// i.e. supports initialization from vector<>, deque<>, list<>
-		template<typename _Iter, enable_if_t<_is_iterator_v_list_<_Iter>, int> = 0>
+		template<typename _Iter>
 		DLList(_Iter begin, _Iter end) {
 			_Iter it = begin;
 			this->__head__ = new value{ NULL };
@@ -1986,7 +2005,7 @@ namespace Py {
 			return*this;
 		}
 
-		DLList& operator= (DLList&& obj) noexcept {
+		DLList& operator=(DLList&& obj) noexcept {
 			// clearing the previously allocated memory
 			while (this->__head__) {
 				pointer temp = this->__head__;
@@ -2057,12 +2076,9 @@ namespace Py {
 		template<size_t s>
 		CDLList(T(&arr)[s]) : __DLLBase__<T>(arr) {}
 
-		// two pointers to a contiguous memory block based initialization
-		CDLList(T* begin, T* end) : __DLLBase__<T>(begin, end) {}
-
 		// Iterator based initialization, supports iterators that have an overloaded ++ and * operator
 		// i.e. supports initialization from vector<>, deque<>, list<>
-		template<typename _Iter, enable_if_t<_is_iterator_v_list_<_Iter>, int> = 0>
+		template<typename _Iter>
 		CDLList(_Iter begin, _Iter end) {
 			_Iter it = begin;
 			this->__head__ = new value{ NULL };
