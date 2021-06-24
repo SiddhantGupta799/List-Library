@@ -59,7 +59,8 @@ More Description of the Model:
 	  even the debug logging gets constrained to at most the details of object and debug entry.
 	  
 Support for Iterators has also been added. 
-	DLList class supports bi-directional iterators and bi-directional reverse iterators.
-	SLList class supports forward iteratrs only.
-	The Nodes.h file contains support for Iterators for TreeNode.
+
+	- DLList class supports bi-directional iterators and bi-directional reverse iterators.
+	- SLList class supports forward iteratrs only.
+	- The Nodes.h file contains support for Iterators for TreeNode.
 
