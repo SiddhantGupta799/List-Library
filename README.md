@@ -57,3 +57,9 @@ More Description of the Model:
 	  parent class has offered which doesn't leave room for the actual benefits that the derived class offers
 	  for example: concatenation, merging. 
 	  even the debug logging gets constrained to at most the details of object and debug entry.
+	  
+Support for Iterators has also been added. 
+	DLList class supports bi-directional iterators and bi-directional reverse iterators.
+	SLList class supports forward iteratrs only.
+	The Nodes.h file contains support for Iterators for TreeNode.
+
