@@ -263,6 +263,7 @@ namespace Py {
 
 	public:
 		using forward_iterator = _SingleNode_Iterator_<T>;
+		using const_forward_iterator = _Const_SingleNode_Iterator_<T>;
 
 		__SLLBase__() = default;
 
@@ -291,16 +292,24 @@ namespace Py {
 			return _SingleNode_Iterator_<T>(this->_head_);
 		}
 
-		_SingleNode_Iterator_<T> head() {
-			return _SingleNode_Iterator_<T>(this->_head_);
-		}
-
 		_SingleNode_Iterator_<T> end() {
 			return _SingleNode_Iterator_<T>(this->_tail_->next);
 		}
 
+		_SingleNode_Iterator_<T> head() {
+			return _SingleNode_Iterator_<T>(this->_head_);
+		}
+
 		_SingleNode_Iterator_<T> tail() {
 			return _SingleNode_Iterator_<T>(this->_tail_);
+		}
+
+		_Const_SingleNode_Iterator_<T> cbegin() {
+			return _Const_SingleNode_Iterator_<T>(this->_head_);
+		}
+
+		_Const_SingleNode_Iterator_<T> cend() {
+			return _Const_SingleNode_Iterator_<T>(this->_tail_->next);
 		}
 
 	protected:
@@ -715,7 +724,9 @@ namespace Py {
 
 	public:
 		using iterator = _BinaryNode_Iterator_<T>;
+		using const_iterator = _Const_BinaryNode_Iterator_<T>;
 		using reverse_iterator = _BinaryNode_Reverse_Iterator_<T>;
+		using const_reverse_iterator = _Const_BinaryNode_Reverse_Iterator_<T>;
 
 		// size has to be kept private if it gets modified by outside interference member functions will not work right
 		int __size__ = 0;
@@ -815,16 +826,24 @@ namespace Py {
 			return _BinaryNode_Iterator_<T>(this->__head__);
 		}
 
-		_BinaryNode_Iterator_<T> head() {
-			return _BinaryNode_Iterator_<T>(this->__head__);
-		}
-
 		_BinaryNode_Iterator_<T> end() {
 			return _BinaryNode_Iterator_<T>(this->__tail__->next);
 		}
 
+		_BinaryNode_Iterator_<T> head() {
+			return _BinaryNode_Iterator_<T>(this->__head__);
+		}
+
 		_BinaryNode_Iterator_<T> tail() {
 			return _BinaryNode_Iterator_<T>(this->__tail__);
+		}
+
+		_Const_BinaryNode_Iterator_<T> cbegin() {
+			return _Const_BinaryNode_Iterator_<T>(this->__head__);
+		}
+
+		_Const_BinaryNode_Iterator_<T> cend() {
+			return _Const_BinaryNode_Iterator_<T>(this->__tail__->next);
 		}
 
 		_BinaryNode_Reverse_Iterator_<T> rbegin() {
@@ -833,6 +852,14 @@ namespace Py {
 
 		_BinaryNode_Reverse_Iterator_<T> rend() {
 			return _BinaryNode_Reverse_Iterator_<T>(this->__head__->prev);
+		}
+
+		_Const_BinaryNode_Reverse_Iterator_<T> crbegin() {
+			return _Const_BinaryNode_Reverse_Iterator_<T>(this->__tail__);
+		}
+
+		_Const_BinaryNode_Reverse_Iterator_<T> crend() {
+			return _Const_BinaryNode_Reverse_Iterator_<T>(this->__head__->prev);
 		}
 
 		// ---x--- Iterator Support
@@ -2243,7 +2270,7 @@ namespace Py {
 //#################################################################################################################
 
 /* implementation of variadic type args Linked List. would contain any type of data */
-
+/*
 template<typename T>
 struct VariadicNode {
 	VariadicNode<void>* prev = NULL;
@@ -2326,3 +2353,4 @@ private:
 	}
 
 };
+*/

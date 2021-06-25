@@ -49,7 +49,8 @@ namespace Py {
 	template<typename T>
 	class _SingleNode_Iterator_ {
 		using pointer = SingleNode<T>*;
-
+	
+	protected:
 		pointer __iter__ = NULL;
 
 	public:
@@ -83,8 +84,8 @@ namespace Py {
 			return *this;
 		}
 
-		T operator*() {
-			return this->__iter__->data;
+		T& operator*() {
+			return &(this->__iter__->data);
 		}
 
 		bool operator== (_SingleNode_Iterator_ obj) {
@@ -108,6 +109,32 @@ namespace Py {
 		}
 	};
 
+	// Const Forward Iterator
+	template<typename T>
+	class _Const_SingleNode_Iterator_  :public _SingleNode_Iterator_<T> {
+		using pointer = SingleNode<T>*;
+
+	public:
+		_Const_SingleNode_Iterator_(SingleNode<T>* _pointer_) : _SingleNode_Iterator_<T>(_pointer_){}
+
+		_Const_SingleNode_Iterator_(const _Const_SingleNode_Iterator_& obj) {
+			this->__iter__ = obj.__iter__;
+		}
+
+		_Const_SingleNode_Iterator_& operator=(const _Const_SingleNode_Iterator_& obj) {
+			this->__iter__ = obj.__iter__;
+		}
+
+		T operator*() {
+			return this->__iter__->data;
+		}
+
+		~_Const_SingleNode_Iterator_() {}
+
+	};
+
+//#################################################################################################################
+	
 	// Bi-Directional Iterator
 	template<typename T>
 	class _BinaryNode_Iterator_ {
@@ -170,8 +197,8 @@ namespace Py {
 			return *this;
 		}
 
-		T operator*() {
-			return this->__iter__->data;
+		T& operator*() {
+			return &(this->__iter__->data);
 		}
 
 		bool operator== (BinaryNode<T>* _pointer_) {
@@ -201,12 +228,41 @@ namespace Py {
 		}
 	};
 
+	// Const Bi-Directional Iterator
+	template<typename T>
+	class _Const_BinaryNode_Iterator_ :public _BinaryNode_Iterator_<T> {
+		using pointer = BinaryNode<T>*;
+		using value = BinaryNode<T>;
+
+	public:
+
+		_Const_BinaryNode_Iterator_(BinaryNode<T>* _pointer_) : _BinaryNode_Iterator_<T>(_pointer_) {}
+
+		// since this class just consists of a pointer, during destruction the ointer will be nulled out
+		// therefore copying doesn't create problems
+		_Const_BinaryNode_Iterator_(const _Const_BinaryNode_Iterator_& _pointer_) {
+			this->__iter__ = _pointer_.__iter__;
+		}
+
+		// therefore copy assignment doesn't create problems
+		_Const_BinaryNode_Iterator_& operator=(const _Const_BinaryNode_Iterator_& _pointer_) {
+			this->__iter__ = _pointer_.__iter__;
+		}
+
+		T operator*() {
+			return this->__iter__->data;
+		}
+
+		~_Const_BinaryNode_Iterator_() {}
+	};
+
 	// Bi-Directional Reverse Iterator
 	template<typename T>
 	class _BinaryNode_Reverse_Iterator_ {
 		using pointer = BinaryNode<T>*;
 		using value = BinaryNode<T>;
-
+	
+	protected:
 		pointer __iter__ = NULL;
 
 	public:
@@ -289,6 +345,36 @@ namespace Py {
 		}
 	};
 
+	// Const Bi-Directional Reverse Iterator
+	template<typename T>
+	class _Const_BinaryNode_Reverse_Iterator_ :public _BinaryNode_Reverse_Iterator_<T> {
+		using pointer = BinaryNode<T>*;
+		using value = BinaryNode<T>;
+
+	public:
+
+		_Const_BinaryNode_Reverse_Iterator_(BinaryNode<T>* _pointer_) : _BinaryNode_Reverse_Iterator_<T>(_pointer_) {}
+
+		// since this class just consists of a pointer, during destruction the ointer will be nulled out
+		// therefore copying doesn't create problems
+		_Const_BinaryNode_Reverse_Iterator_(const _Const_BinaryNode_Reverse_Iterator_& _pointer_) {
+			this->__iter__ = _pointer_.__iter__;
+		}
+
+		// therefore copy assignment doesn't create problems
+		_Const_BinaryNode_Reverse_Iterator_& operator=(const _Const_BinaryNode_Reverse_Iterator_& _pointer_) {
+			this->__iter__ = _pointer_.__iter__;
+		}
+
+		T operator*() {
+			return this->__iter__->data;
+		}
+
+		~_Const_BinaryNode_Reverse_Iterator_() {}
+	};
+
+//#################################################################################################################
+	
 	// Tree Iterator
 	/*
 	pre increment triggers a movement downwards to left branch
