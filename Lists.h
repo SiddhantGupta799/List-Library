@@ -1,10 +1,7 @@
 #ifndef _LISTS_H_
 #define _LISTS_H_
 
-#include <iostream>
 #include "Nodes.h"
-
-using namespace std;
 
 /*
 # List-Library
