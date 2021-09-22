@@ -410,11 +410,11 @@ namespace Py {
 		}
 
 		_TreeNode_Iterator_& operator--() {
-			this->__iter__ = this->__iter__->prev;
+			this->__iter__ = this->__iter__->up;
 		}
 
 		_TreeNode_Iterator_& operator--(int) {
-			this->__iter__ = this->__iter__->prev;
+			this->__iter__ = this->__iter__->up;
 		}
 
 		T operator*() {
